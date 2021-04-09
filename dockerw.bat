@@ -125,18 +125,35 @@ goto end
 
 :: ------------------- Command "dev" mathod -------------------
 
+:cli-dev-prepare (
+    echo ^> Initial cache
+    IF NOT EXIST cache\code (
+        mkdir cache\code
+    )
+
+    echo ^> Build image
+    docker build --rm^
+        -t python.dev:%PROJECT_NAME%^
+        ./docker/develop
+
+    goto end
+)
+
+:cli-dev-rundocker (
+    echo ^> Startup docker container instance
+    docker rm -f python-dev-%PROJECT_NAME%
+    docker run -d --rm -p 8888:8888^
+        -v %cd%/src:/home/jovyan/code^
+        --name python-dev-%PROJECT_NAME%^
+        python.dev:%PROJECT_NAME%
+    goto end
+)
+
 :cli-dev (
+    call :cli-dev-prepare
     IF NOT defined OPEN_NOTEBOOK_ONLY (
-        echo ^> Build image
-        docker build --rm^
-            -t python.dev:%PROJECT_NAME%^
-            ./docker/develop
-        echo ^> Startup docker container instance
-        docker rm -f python-dev-%PROJECT_NAME%
-        docker run -d --rm -p 8888:8888^
-            -v %cd%/src:/home/jovyan/code^
-            --name python-dev-%PROJECT_NAME%^
-            python.dev:%PROJECT_NAME%
+        call :cli-dev-rundocker
+
         echo ^> Waiting 5s for server startup
         docker exec python-dev-%PROJECT_NAME% mkdir img
         TIMEOUT /T 5 >nul
@@ -169,8 +186,19 @@ goto end
 :: ------------------- Command "convert" mathod -------------------
 
 :cli-convert (
+    call :cli-dev-prepare
+    docker ps -q -f name=python-dev-%PROJECT_NAME% > .tmp
+    set /p CONTAINER_ID=<.tmp
+    del .tmp
+    IF NOT defined CONTAINER_ID (
+        call :cli-dev-rundocker
+    )
+
     echo ^> Convert *.ipynb to *.py
-    docker exec -ti python-dev-%PROJECT_NAME% bash -l -c "cd code && ipython nbconvert --to python *.ipynb"
+    docker exec -ti python-dev-%PROJECT_NAME% bash -l -c "cd code && ipython nbconvert --to python *.ipynb && chmod 777 *.py"
+    echo ^> Move *.py to cache
+    move /Y %CLI_DIRECTORY%src\*.py %CLI_DIRECTORY%\cache\code
+
     goto end
 )
 
@@ -206,19 +234,20 @@ goto end
     call :cli-run-prepare
 
     echo ^> Startup docker container instance
-    set PYTHON_FILE=%CLI_DIRECTORY%src\!EXEC_TARGET: =!.py
+    set PYTHON_FILE=%CLI_DIRECTORY%cache\code\!EXEC_TARGET: =!.py
     IF EXIST !PYTHON_FILE! (
         docker run -ti --rm^
-            -v %cd%/src:/repo^
-            -v %cd%/cache/img:/img^
+            -v %cd%\cache\code:/repo^
+            -v %cd%\cache\img:/img^
             --name python-run-%PROJECT_NAME%^
             python.run:%PROJECT_NAME% /repo/!EXEC_TARGET: =!.py
     ) else (
         IF NOT %EXEC_TARGET% == null (
             echo ^> File !PYTHON_FILE! not find.
         )
-        echo ^> Python file int directory "src" :
-        dir /B %CLI_DIRECTORY%src\*.py
+        echo ^> Python file in directory "cache/code" :
+        dir /B %CLI_DIRECTORY%cache\code\*.py
+        echo ^> Use command : dockerw run "--exec=<filename>"
     )
 
     goto end
