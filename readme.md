@@ -59,3 +59,11 @@ dockerw run "--exec=<python filename>"
 > 若不指定檔案，則會列出在 ```src``` 目錄下的 *.py 檔案。
 >
 > ```--exec``` 需要提供的是檔案名稱，無需提供附檔名。
+
+## 數據設計參考文獻
+
++ [Linear Models](https://scikit-learn.org/stable/modules/linear_model.html)
+    - [迴歸模型簡介](https://pyecontech.com/2019/12/10/%E6%A9%9F%E5%99%A8%E5%AD%B8%E7%BF%92%E9%A6%96%E9%83%A8%E6%9B%B2-%E8%BF%B4%E6%AD%B8%E6%A8%A1%E5%9E%8B%E7%B0%A1%E4%BB%8B/)
+    - [迴歸模型實作](https://pyecontech.com/2019/12/28/python-%E5%AF%A6%E4%BD%9C-%E8%BF%B4%E6%AD%B8%E6%A8%A1%E5%9E%8B/)
+    - [多元線性迴歸分析(Multiple regression analysis)-統計說明與SPSS操作](https://www.yongxi-stat.com/multiple-regression-analysis/)
++ [Matplotlib](https://www.happycoder.org/2017/10/13/python-data-science-and-machine-learning-matplotlib-tutorial/)
